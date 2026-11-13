@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>User Access Review Testing | Protiviti</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="config.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img id="brandLogo" src="assets/protiviti-logo.png" alt="Protiviti" height="30">
+      <span id="brandText" class="brand-text" hidden>Protiviti</span>
+      <span class="brand-sep" aria-hidden="true"></span>
+      <div class="brand-title">
+        <span class="product">User Access Review Testing</span>
+        <span class="product-sub">IT general controls</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span id="aiPill" class="pill pill-muted" role="status">Checking backend</span>
+      <label class="runs-picker">
+        <span class="visually-hidden">Open a previous run</span>
+        <select id="runsSelect"><option value="">Previous runs</option></select>
+      </label>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="rail" aria-label="Testing steps">
+      <ol id="rail">
+        <li data-step="details"><a href="#details"><span class="dot">1</span>Engagement details</a></li>
+        <li data-step="evidence"><a href="#evidence"><span class="dot">2</span>Evidence</a></li>
+        <li data-step="run"><a href="#run"><span class="dot">3</span>Run testing</a></li>
+        <li data-step="results"><a href="#results"><span class="dot">4</span>Results</a></li>
+        <li data-step="chat"><a href="#chat"><span class="dot">5</span>Ask the data</a></li>
+      </ol>
+    </nav>
+
+    <main>
+      <!-- 1. Engagement details -->
+      <section id="details" class="panel">
+        <h2><span class="step-no">1</span>Engagement details</h2>
+        <p class="lede">These label the workpaper and set the timeliness test. Blank dates are read from the evidence.</p>
+        <div class="form-grid form-2">
+          <label class="field"><span>Application</span>
+            <input id="appName" type="text" value="TRAX" maxlength="80" autocomplete="off"></label>
+          <label class="field"><span>Control owner</span>
+            <input id="controlOwner" type="text" value="Crystal Hood" maxlength="80" autocomplete="off">
+            <small>Sends the review requests. Their e-mails are never counted as approvals.</small></label>
+        </div>
+        <div class="form-grid form-3">
+          <label class="field"><span>Response window (days)</span>
+            <input id="responseDays" type="number" min="1" max="365" value="30">
+            <small>A reply within this many days of the manager's request e-mail is on time.</small></label>
+          <label class="field"><span>Start listing date</span>
+            <input id="startDate" type="date">
+            <small>Blank: from the file name, then the PDF timestamp.</small></label>
+          <label class="field"><span>Post-review listing date</span>
+            <input id="afterDate" type="date">
+            <small>Blank: from the file name, then the PDF timestamp.</small></label>
+        </div>
+        <details class="advanced">
+          <summary>Testing settings</summary>
+          <div class="form-grid">
+            <label class="field"><span>Dormant after (days)</span>
+              <input id="dormantDays" type="number" min="1" max="3650" value="90"></label>
+            <label class="field"><span>Elevated access codes</span>
+              <input id="elevatedCodes" type="text" value="AC, SA, UA, UAO"></label>
+            <label class="field"><span>Label for approved access</span>
+              <input id="labelApprove" type="text" value="Approved"></label>
+            <label class="field"><span>Label for rejected access</span>
+              <input id="labelRemove" type="text" value="Rejected"></label>
+            <label class="toggle">
+              <input id="useAi" type="checkbox" checked>
+              <span>Read manager e-mails with Azure OpenAI</span>
+              <small id="useAiNote">Every AI answer must quote the e-mail and is checked before it counts.</small>
+            </label>
+          </div>
+        </details>
+      </section>
+
+      <!-- 2. Evidence -->
+      <section id="evidence" class="panel panel-flush">
+        <div class="panel-head">
+          <h2><span class="step-no">2</span>Evidence request list</h2>
+          <p class="lede">Drop each file on its row, or choose it. File names can be anything.</p>
+        </div>
+        <div class="table-wrap">
+          <table class="pbc" id="pbcTable">
+            <thead>
+              <tr><th scope="col">Ref</th><th scope="col">Evidence</th><th scope="col">Used for</th>
+                  <th scope="col">File</th><th scope="col">Status</th></tr>
+            </thead>
+            <tbody id="pbcBody"></tbody>
+          </table>
+        </div>
+        <div class="panel-foot">
+          <span id="pbcCount">0 of 3 required items received</span>
+          <button type="button" class="btn-link" id="clearFiles">Clear all files</button>
+        </div>
+      </section>
+
+      <!-- 3. Run -->
+      <section id="run" class="panel">
+        <h2><span class="step-no">3</span>Run testing</h2>
+        <div class="run-row">
+          <button type="button" class="btn btn-primary" id="runBtn" disabled>Run testing</button>
+          <span id="runHint" class="hint">Add the three required files to start.</span>
+        </div>
+        <div id="progress" class="progress" hidden><div class="bar"></div></div>
+        <pre id="runLog" class="log" aria-live="polite" hidden></pre>
+      </section>
+
+      <!-- 4. Results -->
+      <section id="results" class="panel" aria-live="polite">
+        <h2><span class="step-no">4</span>Results</h2>
+        <div id="resultsEmpty" class="empty">Results appear here after a run, or open a previous run from the top bar.</div>
+        <div id="resultsBody" hidden>
+          <div id="conclusion" class="conclusion">
+            <div>
+              <p class="conclusion-title" id="conclusionTitle"></p>
+              <p class="conclusion-sub" id="conclusionSub"></p>
+            </div>
+            <a class="btn btn-primary" id="downloadBtn" href="#" download>Download workbook</a>
+          </div>
+          <p class="run-meta" id="runMeta"></p>
+
+          <h3>Attributes tested</h3>
+          <div class="table-wrap">
+            <table class="matrix" id="matrix">
+              <thead><tr><th scope="col" class="tick-col"><span class="visually-hidden">Result</span></th>
+                <th scope="col">Attribute</th><th scope="col">What was tested</th><th scope="col">Result</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <p class="legend"><span class="tick ok">✓</span> Agreed without exception
+            <span class="tick bad">✗</span> Exception noted <span class="tick info">◇</span> For follow-up, not a control failure</p>
+
+          <details class="all-metrics">
+            <summary>All metrics</summary>
+            <div class="table-wrap"><table class="metrics" id="metricsTable"><tbody></tbody></table></div>
+          </details>
+
+          <h3>Detail</h3>
+          <div class="tabs" role="tablist" id="tabs"></div>
+          <div class="table-tools">
+            <input type="search" id="tableSearch" placeholder="Filter rows" aria-label="Filter rows">
+            <span id="tableCount" class="hint"></span>
+          </div>
+          <div class="table-wrap detail-wrap"><table class="detail" id="detailTable"></table></div>
+          <div class="pager" id="pager"></div>
+        </div>
+      </section>
+
+      <!-- 5. Chat -->
+      <section id="chat" class="panel">
+        <h2><span class="step-no">5</span>Ask the data</h2>
+        <p class="lede">Answers come from this run's results. Each one shows the query behind it.</p>
+        <div id="chatLog" class="chat-log" aria-live="polite">
+          <div id="chatEmpty" class="empty">Run the testing or open a previous run to start asking questions.</div>
+        </div>
+        <div id="suggestions" class="suggestions"></div>
+        <form id="chatForm" class="chat-form">
+          <label class="visually-hidden" for="chatInput">Your question</label>
+          <textarea id="chatInput" rows="2" placeholder="For example: which managers approved users who never logged in?" disabled></textarea>
+          <button type="submit" class="btn btn-primary" id="chatSend" disabled>Ask</button>
+        </form>
+      </section>
+
+      <footer class="foot">
+        Protiviti internal tool. Uploaded evidence and results are kept on the backend server for
+        <span id="retention">30</span> days.
+      </footer>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

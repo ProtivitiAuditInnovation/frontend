@@ -1,0 +1,12 @@
+node_modules/
+dist/
+build/
+.env
+.env.*
+*.log
+*.xlsx
+*.pdf
+*.msg
+.vite/
+.next/
+.DS_Store

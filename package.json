@@ -1,0 +1,10 @@
+{
+  "name": "uar-testing-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Static frontend for the UAR Testing tool (no build step, no dependencies)",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js"
+  }
+}
