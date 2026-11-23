@@ -45,14 +45,14 @@
         <p class="lede">These label the workpaper and set the timeliness test. Blank dates are read from the evidence.</p>
         <div class="form-grid form-2">
           <label class="field"><span>Application</span>
-            <input id="appName" type="text" value="TRAX" maxlength="80" autocomplete="off"></label>
+            <input id="appName" type="text" maxlength="80" autocomplete="off"></label>
           <label class="field"><span>Control owner</span>
-            <input id="controlOwner" type="text" value="Crystal Hood" maxlength="80" autocomplete="off">
+            <input id="controlOwner" type="text" maxlength="80" autocomplete="off">
             <small>Sends the review requests. Their e-mails are never counted as approvals.</small></label>
         </div>
         <div class="form-grid form-3">
           <label class="field"><span>Response window (days)</span>
-            <input id="responseDays" type="number" min="1" max="365" value="30">
+            <input id="responseDays" type="number" min="1" max="365">
             <small>A reply within this many days of the manager's request e-mail is on time.</small></label>
           <label class="field"><span>Start listing date</span>
             <input id="startDate" type="date">
@@ -65,17 +65,22 @@
           <summary>Testing settings</summary>
           <div class="form-grid">
             <label class="field"><span>Dormant after (days)</span>
-              <input id="dormantDays" type="number" min="1" max="3650" value="90"></label>
+              <input id="dormantDays" type="number" min="1" max="3650"></label>
             <label class="field"><span>Elevated access codes</span>
-              <input id="elevatedCodes" type="text" value="AC, SA, UA, UAO"></label>
+              <input id="elevatedCodes" type="text"></label>
             <label class="field"><span>Label for approved access</span>
-              <input id="labelApprove" type="text" value="Approved"></label>
+              <input id="labelApprove" type="text"></label>
             <label class="field"><span>Label for rejected access</span>
-              <input id="labelRemove" type="text" value="Rejected"></label>
+              <input id="labelRemove" type="text"></label>
             <label class="toggle">
               <input id="useAi" type="checkbox" checked>
               <span>Read manager e-mails with Azure OpenAI</span>
               <small id="useAiNote">Every AI answer must quote the e-mail and is checked before it counts.</small>
+            </label>
+            <label class="toggle">
+              <input id="readScannedPdf" type="checkbox" checked>
+              <span>Read scanned (image-only) PDFs with Azure OpenAI and match them row by row to the Excel</span>
+              <small>About 2 to 4 minutes per 80 pages the first time; re-runs use saved results.</small>
             </label>
           </div>
         </details>

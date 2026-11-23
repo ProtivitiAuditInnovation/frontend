@@ -1,10 +1,14 @@
 {
   "name": "uar-testing-frontend",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
-  "description": "Static frontend for the UAR Testing tool (no build step, no dependencies)",
+  "description": "Frontend for the UAR Testing tool (no build step, no dependencies)",
+  "main": "server.js",
   "scripts": {
-    "dev": "node server.js",
+    "dev": "node server.js --local",
     "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }

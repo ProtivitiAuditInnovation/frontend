@@ -50,6 +50,19 @@
   logo.addEventListener("error", () => { logo.hidden = true; $("#brandText").hidden = false; });
   if (logo.complete && logo.naturalWidth === 0) { logo.hidden = true; $("#brandText").hidden = false; }
 
+  // Form defaults come from the backend's .env / App Settings; a field the user already typed in is kept.
+  function applyDefaults(d) {
+    const map = { appName: "app_name", controlOwner: "control_owner", responseDays: "response_days",
+      dormantDays: "dormant_days", elevatedCodes: "elevated_codes", labelApprove: "status_approve",
+      labelRemove: "status_remove" };
+    for (const [id, key] of Object.entries(map)) {
+      const el = document.getElementById(id);
+      if (el && !el.value && d[key] !== undefined && d[key] !== null) el.value = d[key];
+    }
+    if (d.read_scanned_pdf === false) $("#readScannedPdf").checked = false;
+    syncDetails();
+  }
+
   async function checkHealth() {
     const pill = $("#aiPill");
     try {
@@ -58,8 +71,11 @@
       pill.className = "pill " + (aiEnabled ? "pill-ok" : "pill-muted");
       pill.textContent = aiEnabled ? `AI on (${h.ai.deployment})` : "AI off: keyword rules";
       $("#retention").textContent = h.retention_days;
+      applyDefaults(h.defaults || {});
       const useAi = $("#useAi");
       useAi.disabled = !aiEnabled;
+      $("#readScannedPdf").disabled = !aiEnabled;
+      if (!aiEnabled) $("#readScannedPdf").checked = false;
       if (!aiEnabled) { useAi.checked = false; $("#useAiNote").textContent = "Azure OpenAI is not configured on the backend, so e-mails are read with keyword rules."; }
       loadRuns();
     } catch (e) {
@@ -197,6 +213,7 @@
       dormant_days: $("#dormantDays").value, elevated_codes: $("#elevatedCodes").value,
       status_approve: $("#labelApprove").value.trim(), status_remove: $("#labelRemove").value.trim(),
       use_ai: $("#useAi").checked && aiEnabled,
+      read_scanned_pdf: $("#readScannedPdf").checked && aiEnabled,
     };
   }
 
@@ -300,10 +317,11 @@
   }
 
   function renderMatrix() {
-    const rc = val("Row count agrees to PDF"), dt = String(val("PDF 'Created on' date agrees to extraction date") || "");
+    const rc = String(val("Row count agrees to PDF") || ""), dt = String(val("PDF 'Created on' date agrees to extraction date") || "");
+    const rc2 = String(val("Post-review listing row count agrees to PDF") || "");
     const xl = String(val("Excel report 'Created on' agrees to extraction date") || "");
     const okish = (x) => x === "Yes" || x.startsWith("n/a");
-    const ipeKind = String(rc).startsWith("No") || dt.startsWith("No") || xl.startsWith("No") ? "bad"
+    const ipeKind = rc.startsWith("No") || rc2.startsWith("No") || dt.startsWith("No") || xl.startsWith("No") ? "bad"
       : (rc === "Yes" && okish(dt) && okish(xl) ? "ok" : "info");
     const missing = num("Rows missing from review file"), extra = num("Rows in review file not in User Report"), nomgr = num("Rows with no manager assigned");
     const win = (results.meta && results.meta.response_days) || 30;
@@ -328,8 +346,9 @@
 
     const items = [
       [ipeKind, "Report extraction (IPE)", "Excel listing agrees to the system report; report date matches the extraction date",
-        `PDF row count: ${rc === "Yes" ? "agrees" : rc}. Excel report date: ${xl === "Yes" ? "agrees" : xl}. ` +
-        `PDF report date: ${dt === "Yes" ? "agrees" : dt}.`],
+        `Start listing PDF vs Excel: ${rc === "Yes" ? "every row agrees" : rc}. ` +
+        `Post-review listing PDF vs Excel: ${rc2 === "Yes" ? "every row agrees" : rc2}. ` +
+        `Excel report date: ${xl === "Yes" ? "agrees" : xl}. PDF report date: ${dt === "Yes" ? "agrees" : dt}.`],
       [missing + extra + nomgr ? "bad" : "ok", "Completeness of the review", "Every access row in the start listing was sent for review, with a manager",
         missing + extra + nomgr ? `${plural(missing, "row")} missing from the review file, ${extra} extra, ${nomgr} without a manager.`
           : `All ${num("Access rows - start User Report (Excel)")} access rows were reviewed.`],
@@ -384,6 +403,7 @@
     { id: "movement", label: "Movement", table: "movement" },
     { id: "ipe", label: "Report checks", table: "ipe" },
     { id: "request_rows", label: "E-mailed rows", table: "request_rows" },
+    { id: "pdf_rows", label: "PDF rows", table: "pdf_rows" },
     { id: "emails", label: "E-mails", table: "emails",
       cols: ["File", "Message", "Author", "To", "Sent", "Classification", "Matched Manager", "Matched Using", "Read By",
              "Decision", "Summary"] },
@@ -418,7 +438,7 @@
     return cellTone(s) + w;
   }
   function cellTone(s) {
-    if (/^(EXCEPTION|NOT supported|NOT addressed|Conflict|No - \d|No response|Self-approval$)/.test(s)) return "v-bad";
+    if (/^(EXCEPTION|NOT supported|NOT addressed|Conflict|No - |No response|Self-approval$|In Excel, not found|PDF row not in Excel)/.test(s)) return "v-bad";
     if (/^(Removed - OK|Retained - OK|Consistent|Supported)/.test(s)) return "v-ok";
     return "";
   }
