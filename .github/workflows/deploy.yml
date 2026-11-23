@@ -1,4 +1,4 @@
-name: Deploy ADM UAR
+name: Deploy Frontend
 
 on:
   push:
@@ -24,12 +24,12 @@ jobs:
 
       - name: Verify application
         run: |
-          node --check server.js
           test -f package.json
+          node --check server.js
 
-      - name: Deploy to Azure App Service
+      - name: Deploy Frontend to Azure
         uses: azure/webapps-deploy@v3
         with:
           app-name: adm-uar
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          publish-profile: ${{ secrets.AZURE_FRONTEND_PUBLISH_PROFILE }}
           package: .
