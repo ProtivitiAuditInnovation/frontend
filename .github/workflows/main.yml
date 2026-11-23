@@ -1,0 +1,70 @@
+name: Deploy frontend to Azure (adm-uar)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-frontend
+  cancel-in-progress: false
+
+env:
+  AZURE_WEBAPP_NAME: adm-uar
+  UAR_API_BASE: https://be-adm-uar-bdfwgddkgphrc0b0.centralindia-01.azurewebsites.net/api
+  NODE_VERSION: "20.x"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Write .env (backend address)
+        run: printf 'UAR_API_BASE=%s\n' "$UAR_API_BASE" > .env
+
+      - name: Check the app starts
+        run: |
+          node --check server.js
+          node --check app.js
+          PORT=8080 node server.js &
+          SERVER_PID=$!
+          sleep 2
+          curl -fsS http://127.0.0.1:8080/ -o /dev/null
+          curl -fsS http://127.0.0.1:8080/config.js | grep -F "$UAR_API_BASE"
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/.env)" = "404"
+          kill $SERVER_PID
+
+      - name: Package
+        run: zip -r "$RUNNER_TEMP/frontend.zip" . -x ".git/*" ".github/*" "node_modules/*" "*.PublishSettings"
+
+      - name: Deploy to Azure App Service
+        id: deploy
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_FRONTEND_PUBLISH_PROFILE }}
+          package: ${{ runner.temp }}/frontend.zip
+
+      - name: Check the deployed site
+        env:
+          SITE: ${{ steps.deploy.outputs.webapp-url }}
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS "$SITE/config.js" | grep -qF "$UAR_API_BASE"; then
+              echo "Frontend is up at $SITE"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "The site did not serve config.js pointing to $UAR_API_BASE. Check Log stream in the Azure portal."
+          exit 1
